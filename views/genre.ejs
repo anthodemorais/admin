@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/style.css">
+        <title>Films</title>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    </head>
+    <body>
+
+        <strong>Distributeurs (<%= count %>)</strong>
+
+        <br>
+        <br>
+
+        <button><a href="?limit=10">10</a></button>
+        <button><a href="?limit=20">20</a></button>
+        <button><a href="?limit=50">50</a></button>
+
+        <br>
+        <br>
+
+        <% for(var i=1; i <= Math.ceil(count/limit); i++) { %>
+            <button><a href="?page=<%= i %>&limit=<%= limit %>&order=<%= order %>"><%= i %></a></button>
+        <% } %>
+
+        <br>
+        <br>
+
+
+        <table>
+            <tr>
+                <th><a href="?order=id_genre">ID</a></th>
+                <th><a href="?order=nom">Nom</a></th>
+                <th>See genre</th>
+                <th>Delete row</th>
+            </tr>
+            <% for(var i = limit * (page-1); i < (limit * page); i++) { %>
+                <% if (genres[i]) { %>
+                    <tr id="<%= genres[i].id_genre %>">
+                        <td><%= genres[i].id_genre %></td>
+                        <td id="titre_<%= genres[i].id_genre %>"><%= genres[i].nom %></td>
+                        <td><a href="/genre/<%= genres[i].id_genre %>">See genre</a></td>
+                        <td><button class="delete" id="<%= genres[i].id_genre %>">delete</button></td>
+                    </tr>
+                <% } %>
+            <% } %>
+        </table>
+
+    </body>
+
+    <script>
+
+        document.querySelectorAll(".delete").forEach((el) => {
+            el.addEventListener('click', function(e) {
+                fetch(`http://localhost:3000/genre/${el.id}`, {
+                    method: "DELETE"
+                })
+                .catch(err => {
+                    alert("error, could not delete genre")
+                })
+            })
+        })
+
+        function onDelete() {
+            window.location.reload(true);
+        }
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('genre', (data) => {
+            if (data.type == "updated") {
+                var row = document.getElementById(`${data.id_genre}`)
+                if (row != null) {
+                    for (var key in data.fields) {
+                        document.getElementById(`${key}_${data.id_genre}`).innerHTML = data.fields[key]
+                    }
+                }
+            }
+            else if (data.type == "deleted") {
+                var row = document.getElementById(`${data.id_genre}`)
+                if (row != null) {
+                    row.remove()
+                }
+            }
+        });
+
+    </script>
+
+</html>

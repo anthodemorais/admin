@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/style.css">
+        <title>Films</title>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    </head>
+    <body>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Delete row</th>
+            </tr>
+            <tr id="tr_<%= genre.id_genre %>">
+                <td><%= genre.id_genre %></td>
+                <td id="nom"><%= genre.nom %></td>
+                <td><button class="delete" id="<%= genre.id_genre %>">delete</button></td>
+            </tr>
+        </table>
+
+        <form id="<%= genre.id_genre %>">
+            <strong>Update</strong>
+            <input type="text" name="nom" placeholder="nom" />
+            <input type="submit" value="Update" />
+        </form>
+
+    </body>
+
+    <script>
+
+        document.querySelectorAll(".delete").forEach((el) => {
+            el.addEventListener('click', function(e) {
+                fetch(`http://localhost:3000/genre/${el.id}`, {
+                    method: "DELETE"
+                })
+                .then((response) => {
+                    if (response.status == 200) {
+                        onDelete();
+                    }
+                })
+                .catch(err => {
+                    alert("error, could not delete movie")
+                })
+            })
+        })
+
+        document.querySelector("form").addEventListener("submit", e => {
+            e.preventDefault();
+            var fields = {
+                nom: document.querySelector("input[name='nom']").value,
+            }
+
+            fetch(`http://localhost:3000/genre/${e.target.getAttribute("id")}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(fields)
+            })
+            .catch(err => {
+                alert("error, could not update genre")
+            })
+        })
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('genre', (data) => {
+            if (data.type == "updated") {
+                var row = document.getElementById(`tr_${data.id_genre}`)
+                if (row != null) {
+                    for (var key in data.fields) {
+                        document.getElementById(data.fields[key]).innerHTML = data.values[data.fields[key]]
+                    }
+                }
+            }
+            else if (data.type == "deleted" && document.getElementById(`${data.id_genre}`) != null) {
+                window.location.replace("http://localhost:3000/genre")
+            }
+        });
+
+    </script>
+
+</html>

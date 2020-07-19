@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/style.css">
+        <title>Films</title>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    </head>
+    <body>
+
+        <strong>Distributeurs (<%= count %>)</strong>
+
+        <br>
+        <br>
+
+        <button><a href="?limit=10">10</a></button>
+        <button><a href="?limit=20">20</a></button>
+        <button><a href="?limit=50">50</a></button>
+
+        <br>
+        <br>
+
+        <% for(var i=1; i <= Math.ceil(count/limit); i++) { %>
+            <button><a href="?page=<%= i %>&limit=<%= limit %>&order=<%= order %>"><%= i %></a></button>
+        <% } %>
+
+        <br>
+        <br>
+
+        <table>
+            <tr>
+                <th><a href="?order=id_distributeur">ID</a></th>
+                <th><a href="?order=nom">Nom</a></th>
+                <th><a href="?order=telephone">Telephone</a></th>
+                <th><a href="?order=adresse">Adresse</a></th>
+                <th><a href="?order=cpostal">Code postal</a></th>
+                <th><a href="?order=ville">Ville</a></th>
+                <th><a href="?order=pays">Pays</a></th>
+                <th>See distributeur</th>
+                <th>Delete row</th>
+            </tr>
+            <% for(var i = limit * (page-1); i < (limit * page); i++) { %>
+                <% if (distributeurs[i]) { %>
+                    <tr id="<%= distributeurs[i].id_distributeur %>">
+                        <td><%= distributeurs[i].id_distributeur %></td>
+                        <td id="nom_<%= distributeurs[i].id_distributeur %>"><%= distributeurs[i].nom %></td>
+                        <td id="telephone_<%= distributeurs[i].id_distributeur %>"><%= distributeurs[i].telephone %></td>
+                        <td id="adresse_<%= distributeurs[i].id_distributeur %>"><%= distributeurs[i].adresse %></td>
+                        <td id="cpostal_<%= distributeurs[i].id_distributeur %>"><%= distributeurs[i].cpostal %></td>
+                        <td id="ville_<%= distributeurs[i].id_distributeur %>"><%= distributeurs[i].ville %></td>
+                        <td id="pays_<%= distributeurs[i].id_distributeur %>"><%= distributeurs[i].pays %></td>
+                        <td><a href="/distributeur/<%= distributeurs[i].id_distributeur %>">See distributeur</a></td>
+                        <td><button class="delete" id="<%= distributeurs[i].id_distributeur %>">delete</button></td>
+                    </tr>
+                <% } %>
+            <% } %>
+        </table>
+
+    </body>
+
+    <script>
+
+        document.querySelectorAll(".delete").forEach((el) => {
+            el.addEventListener('click', function(e) {
+                fetch(`http://localhost:3000/distributeur/${el.id}`, {
+                    method: "DELETE"
+                })
+                .catch(err => {
+                    alert("error, could not delete movie")
+                })
+            })
+        })
+
+        function onDelete() {
+            window.location.reload(true);
+        }
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('distributeur', (data) => {
+            if (data.type == "updated") {
+                var row = document.getElementById(`${data.id_distributeur}`)
+                if (row != null) {
+                    for (var key in data.fields) {
+                        document.getElementById(`${key}_${data.id_distributeur}`).innerHTML = data.fields[key]
+                    }
+                }
+            }
+            else if (data.type == "deleted") {
+                var row = document.getElementById(`${data.id_distributeur}`)
+                if (row != null) {
+                    row.remove()
+                }
+            }
+        });
+
+    </script>
+
+</html>

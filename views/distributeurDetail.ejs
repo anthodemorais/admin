@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/style.css">
+        <title>Films</title>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    </head>
+    <body>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Telephone</th>
+                <th>Adresse</th>
+                <th>Code posta</th>
+                <th>Ville</th>
+                <th>Pays</th>
+                <th>Delete row</th>
+            </tr>
+            <tr id="tr_<%= distributeur.id_distributeur %>">
+                <td><%= distributeur.id_distributeur %></td>
+                <td id="nom"><%= distributeur.nom %></td>
+                <td id="telephone"><%= distributeur.telephone %></td>
+                <td id="adresse"><%= distributeur.adresse %></td>
+                <td id="cpostal"><%= distributeur.cpostal %></td>
+                <td id="ville"><%= distributeur.ville %></td>
+                <td id="pays"><%= distributeur.pays %></td>
+                <td><button class="delete" id="<%= distributeur.id_distributeur %>">delete</button></td>
+            </tr>
+        </table>
+
+        <form id="<%= distributeur.id_distributeur %>">
+            <strong>Update</strong>
+            <input type="text" name="nom" placeholder="nom" />
+            <input type="text" name="telephone" placeholder="telephone" />
+            <input type="text" name="adresse" placeholder="adresse" />
+            <input type="text" name="cpostal" placeholder="cpostal" />
+            <input type="text" name="ville" placeholder="ville" />
+            <input type="text" name="pays" placeholder="pays" />
+            <input type="submit" value="Update" />
+        </form>
+
+    </body>
+
+    <script>
+
+        document.querySelectorAll(".delete").forEach((el) => {
+            el.addEventListener('click', function(e) {
+                fetch(`http://localhost:3000/distributeur/${el.id}`, {
+                    method: "DELETE"
+                })
+                .then((response) => {
+                    if (response.status == 200) {
+                        onDelete();
+                    }
+                })
+                .catch(err => {
+                    alert("error, could not delete distrib")
+                })
+            })
+        })
+
+        document.querySelector("form").addEventListener("submit", e => {
+            e.preventDefault();
+            var fields = {
+                nom: document.querySelector("input[name='nom']").value,
+                telephone: document.querySelector("input[name='telephone']").value,
+                adresse: document.querySelector("input[name='adresse']").value,
+                cpostal: document.querySelector("input[name='cpostal']").value,
+                ville: document.querySelector("input[name='ville']").value,
+                pays: document.querySelector("input[name='pays']").value,
+            }
+
+            fetch(`http://localhost:3000/distributeur/${e.target.getAttribute("id")}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(fields)
+            })
+            .catch(err => {
+                alert("error, could not update movie")
+            })
+        })
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('distributeur', (data) => {
+            if (data.type == "updated") {
+                var row = document.getElementById(`tr_${data.id_distributeur}`)
+                if (row != null) {
+                    for (var key in data.fields) {
+                        document.getElementById(data.fields[key]).innerHTML = data.values[data.fields[key]]
+                    }
+                }
+            }
+            else if (data.type == "deleted" && document.getElementById(`${data.id_distributeur}`) != null) {
+                window.location.replace("http://localhost:3000/distributeur")
+            }
+        });
+
+    </script>
+
+</html>

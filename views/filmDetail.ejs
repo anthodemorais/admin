@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/style.css">
+        <title>Films</title>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    </head>
+    <body>
+
+        <table>
+            <tr>
+                <th><a href="/?order=id_film">ID</a></th>
+                <th><a href="/?order=titre">Titre</a></th>
+                <th><a href="/?order=resum">Resum</a></th>
+                <th><a href="/?order=id_genre">Genre</a></th>
+                <th><a href="/?order=id_distributeur">Distributeur</a></th>
+                <th><a href="/?order=date_debut_affiche">Date debut affiche</a></th>
+                <th><a href="/?order=date_fin_affiche">Date fin affiche</a></th>
+                <th><a href="/?order=duree_minutes">Durée minutes</a></th>
+                <th><a href="/?order=annee_production">Année production</a></th>
+                <th>Delete row</th>
+            </tr>
+            <tr id="tr_<%= film.id_film %>">
+                <td><%= film.id_film %></td>
+                <td id="titre"><%= film.titre %></td>
+                <td id="resum"><%= film.resum %></td>
+                <td id="genre"><%= film.genre %></td>
+                <td id="distrib"><%= film.distrib %></td>
+                <td id="date_debut_affiche"><%= film.date_debut_affiche %></td>
+                <td id="date_fin_affiche"><%= film.date_fin_affiche %></td>
+                <td id="duree_minutes"><%= film.duree_minutes %></td>
+                <td id="annee_production"><%= film.annee_production %></td>
+                <td><button class="delete" id="<%= film.id_film %>">delete</button></td>
+            </tr>
+        </table>
+
+        <form id="<%= film.id_film %>">
+            <strong>Update</strong>
+            <input type="text" name="titre" placeholder="titre" />
+            <input type="text" name="resum" placeholder="resum" />
+            <input type="number" name="id_genre" placeholder="id genre" />
+            <input type="number" name="id_distributeur" placeholder="id distributeur" />
+            <input type="datetime-local" name="date_debut_affiche" placeholder="date debut affiche" />
+            <input type="datetime-local" name="date_fin_affiche" placeholder="date fin affiche" />
+            <input type="number" name="duree_minutes" placeholder="duree minutes" />
+            <input type="number" name="annee_production" placeholder="annee production" />
+            <input type="submit" value="Update" />
+        </form>
+
+    </body>
+
+    <script>
+
+        document.querySelectorAll(".delete").forEach((el) => {
+            el.addEventListener('click', function(e) {
+                fetch(`http://localhost:3000/film/${el.id}`, {
+                    method: "DELETE"
+                })
+                .then((response) => {
+                    if (response.status == 200) {
+                        onDelete();
+                    }
+                })
+                .catch(err => {
+                    alert("error, could not delete movie")
+                })
+            })
+        })
+
+        document.querySelector("form").addEventListener("submit", e => {
+            e.preventDefault();
+            var fields = {
+                titre: document.querySelector("input[name='titre']").value,
+                resum: document.querySelector("input[name='resum']").value,
+                id_genre: document.querySelector("input[name='id_genre']").value,
+                id_distributeur: document.querySelector("input[name='id_distributeur']").value,
+                date_debut_affiche: document.querySelector("input[name='date_debut_affiche']").value,
+                date_fin_affiche: document.querySelector("input[name='date_fin_affiche']").value,
+                duree_minutes: document.querySelector("input[name='duree_minutes']").value,
+                annee_production: document.querySelector("input[name='annee_production']").value,
+            }
+
+            fetch(`http://localhost:3000/film/${e.target.getAttribute("id")}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(fields)
+            })
+            .catch(err => {
+                alert("error, could not update movie")
+            })
+        })
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('film', (data) => {
+            if (data.type == "updated") {
+                var row = document.getElementById(`tr_${data.id_film}`)
+                if (row != null) {
+                    for (var key in data.fields) {
+                        document.getElementById(data.fields[key]).innerHTML = data.values[data.fields[key]]
+                    }
+                }
+            }
+            else if (data.type == "deleted" && document.getElementById(`${data.id_film}`) != null) {
+                window.location.replace("http://localhost:3000/")
+            }
+        });
+
+    </script>
+
+</html>

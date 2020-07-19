@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/style.css">
+        <title>Films</title>
+        <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    </head>
+    <body>
+
+        <strong>Film (<%= count %>)</strong>
+
+        <br>
+        <br>
+
+        <button><a href="/?limit=10">10</a></button>
+        <button><a href="/?limit=20">20</a></button>
+        <button><a href="/?limit=50">50</a></button>
+
+        <br>
+        <br>
+
+        <% for(var i=1; i <= Math.ceil(count/limit); i++) { %>
+            <button><a href="/?page=<%= i %>&limit=<%= limit %>&order=<%= order %>"><%= i %></a></button>
+        <% } %>
+
+        <br>
+        <br>
+
+        <button>
+            <a href="/genre">See genre</a>
+        </button>
+        <button>
+            <a href="/distributeur">See distributeur</a>
+        </button>
+
+
+        <table>
+            <tr>
+                <th><a href="/?order=id_film">ID</a></th>
+                <th><a href="/?order=titre">Titre</a></th>
+                <th><a href="/?order=resum">Resum</a></th>
+                <th><a href="/?order=id_genre">Genre</a></th>
+                <th><a href="/?order=id_distributeur">Distributeur</a></th>
+                <th><a href="/?order=date_debut_affiche">Date debut affiche</a></th>
+                <th><a href="/?order=date_fin_affiche">Date fin affiche</a></th>
+                <th><a href="/?order=duree_minutes">Durée minutes</a></th>
+                <th><a href="/?order=annee_production">Année production</a></th>
+                <th>See film</th>
+                <th>Delete row</th>
+            </tr>
+            <% for(var i = limit * (page-1); i < (limit * page); i++) { %>
+                <% if (films[i]) { %>
+                    <tr id="<%= films[i].id_film %>">
+                        <td><%= films[i].id_film %></td>
+                        <td id="titre_<%= films[i].id_film %>"><%= films[i].titre %></td>
+                        <td id="resum_<%= films[i].id_film %>"><%= films[i].resum %></td>
+                        <td id="genre_<%= films[i].id_film %>"><%= films[i].genre %></td>
+                        <td id="distrib_<%= films[i].id_film %>"><%= films[i].distrib %></td>
+                        <td id="date_debut_affiche_<%= films[i].id_film %>"><%= films[i].date_debut_affiche %></td>
+                        <td id="date_fin_affiche_<%= films[i].id_film %>"><%= films[i].date_fin_affiche %></td>
+                        <td id="duree_minutes_<%= films[i].id_film %>"><%= films[i].duree_minutes %></td>
+                        <td id="annee_production_<%= films[i].id_film %>"><%= films[i].annee_production %></td>
+                        <td><a href="/film/<%= films[i].id_film %>">See film</a></td>
+                        <td><button class="delete" id="<%= films[i].id_film %>">delete</button></td>
+                    </tr>
+                <% } %>
+            <% } %>
+        </table>
+
+    </body>
+
+    <script>
+
+        document.querySelectorAll(".delete").forEach((el) => {
+            el.addEventListener('click', function(e) {
+                fetch(`http://localhost:3000/film/${el.id}`, {
+                    method: "DELETE"
+                })
+                .catch(err => {
+                    alert("error, could not delete movie")
+                })
+            })
+        })
+
+        function onDelete() {
+            window.location.reload(true);
+        }
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('film', (data) => {
+            if (data.type == "updated") {
+                var row = document.getElementById(`${data.id_film}`)
+                if (row != null) {
+                    for (var key in data.fields) {
+                        document.getElementById(`${key}_${data.id_film}`).innerHTML = data.fields[key]
+                    }
+                }
+            }
+            else if (data.type == "deleted") {
+                var row = document.getElementById(`${data.id_film}`)
+                if (row != null) {
+                    row.remove()
+                }
+            }
+        });
+
+    </script>
+
+</html>
